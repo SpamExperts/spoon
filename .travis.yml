@@ -13,9 +13,9 @@ install:
 - pip install -r requirements/tests.txt
 - python setup.py install
 script:
-- py.test tests/unit/ --cov pad --cov scripts --cov-report term-missing
+- py.test tests/unit/ --cov spoon --cov scripts --cov-report term-missing
 - py.test tests/functional/
 after_script:
-- pep8 --show-source pad
+- pep8 --show-source spoon
 after_success:
 - coveralls
