@@ -151,7 +151,7 @@ class _SporkMixIn(_SpoonMixIn):
         else call the super method.
         """
         for pid in self.pids or ():
-            os.kill(pid, signal.SIGTERM)
+            os.kill(pid, self.signal_shutdown)
         if self.pids is None:
             super(_SporkMixIn, self).shutdown()
 
@@ -160,7 +160,7 @@ class _SporkMixIn(_SpoonMixIn):
         else call the super method.
         """
         for pid in self.pids or ():
-            os.kill(pid, signal.SIGUSR1)
+            os.kill(pid, self.signal_reload)
         if self.pids is None:
             super(_SporkMixIn, self).load_config()
 
