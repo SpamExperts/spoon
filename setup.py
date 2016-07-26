@@ -17,7 +17,7 @@ CLASSIFIERS = [
 ]
 
 distutils.core.setup(
-    name='se-server',
+    name='spoon',
     description=DESCRIPTION,
     author="SpamExperts",
     version=spoon.__version__,
