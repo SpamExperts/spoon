@@ -5,8 +5,32 @@ Simple to use pre-forking server interface.
 
 .. image:: https://travis-ci.org/SpamExperts/spoon.svg?branch=master
   :target: https://travis-ci.org/SpamExperts/spoon
-  
-  
+
+Installing
+----------
+
+Spoon can be installed via pip:
+
+.. code-block::
+
+  pip install spoon
+
+
+Compatibility
+-------------
+
+Spoon is compatible with:
+
+ - Python 2.7
+ - Python 3.2+
+ - PyPy 
+ - PyPy 3
+
+Requirements 
+------------
+
+No external dependecies 
+
 How to use a Spork
 ------------------
 
@@ -66,7 +90,7 @@ Daemonized Sporks
 -----------------
 
 It's usually convenient to run the server as a daemon for this spoon
-has a few tools. Simply call the `run_daemon` function with you 
+has a few tools. Simply call the ``run_daemon`` function with you 
 server:
 
 .. code-block::
@@ -90,7 +114,7 @@ Reloading Sporks
 
 Another useful tool for a daemon is signaling it that the configuration 
 changed and it should be reloaded without the stopping and starting the
-server again. This can be achieved by addin a `load_config` method to 
+server again. This can be achieved by addin a ``load_config`` method to 
 the server class:
 
 .. code-block::
@@ -104,7 +128,7 @@ the server class:
           # These can be reloaded with SIGUSR1
           pass
           
-After that the server can be signaled with the `send_action` function:
+After that the server can be signaled with the ``send_action`` function:
 
 .. code-block::
 
@@ -112,3 +136,8 @@ After that the server can be signaled with the `send_action` function:
   >>> spoon.daemon.send_action("reload", "/var/tmp/my-echo-server.pid")
   >>> 
 
+
+License
+-------
+
+The project is licensed under the GNU GPLv2 license.
