@@ -21,17 +21,17 @@ class TestSpoon(unittest.TestCase):
         self.mock_thread = patch("spoon.server.threading.Thread").start()
 
     def test_shutdown(self):
-        server = spoon.server.TCPSpoon(("0.0.0.0", 783))
+        server = spoon.server.TCPSpoon(("0.0.0.0", 30783))
         server.shutdown_handler()
         self.mock_thread.assert_called_with(target=server.shutdown)
 
     def test_reload(self):
-        server = spoon.server.TCPSpoon(("0.0.0.0", 783))
+        server = spoon.server.TCPSpoon(("0.0.0.0", 30783))
         server.reload_handler()
         self.mock_thread.assert_called_with(target=server.load_config)
 
     def test_server_signals(self):
-        server = spoon.server.TCPSpoon(("0.0.0.0", 783))
+        server = spoon.server.TCPSpoon(("0.0.0.0", 30783))
         calls = [
             call(signal.SIGUSR1, server.reload_handler),
             call(signal.SIGTERM, server.shutdown_handler)
@@ -63,13 +63,13 @@ class TestSpork(unittest.TestCase):
         patch.stopall()
 
     def test_server_forever(self):
-        server = spoon.server.TCPSpork(("0.0.0.0", 783))
+        server = spoon.server.TCPSpork(("0.0.0.0", 30783))
         server.serve_forever()
         self.assertEqual(len(server.pids), 4)
 
     def test_master_shutdown(self):
         shutdown = patch("spoon.server.TCPSpoon.shutdown").start()
-        server = spoon.server.TCPSpork(("0.0.0.0", 783))
+        server = spoon.server.TCPSpork(("0.0.0.0", 30783))
         server.prefork = 2
         server.pids = [100, 101]
         server.shutdown()
@@ -81,7 +81,7 @@ class TestSpork(unittest.TestCase):
 
     def test_worker_shutdown(self):
         shutdown = patch("spoon.server._TCPServer.shutdown").start()
-        server = spoon.server.TCPSpork(("0.0.0.0", 783))
+        server = spoon.server.TCPSpork(("0.0.0.0", 30783))
 
         server.prefork = 2
         server.pids = None
@@ -89,7 +89,7 @@ class TestSpork(unittest.TestCase):
         shutdown.assert_called_with()
 
     def test_master_reload(self):
-        server = spoon.server.TCPSpork(("0.0.0.0", 783))
+        server = spoon.server.TCPSpork(("0.0.0.0", 30783))
 
         server.prefork = 2
         server.pids = [100, 101]
@@ -102,7 +102,7 @@ class TestSpork(unittest.TestCase):
 
     def test_worker_reload(self):
         load_config = patch("spoon.server._SpoonMixIn.load_config").start()
-        server = spoon.server.TCPSpork(("0.0.0.0", 783))
+        server = spoon.server.TCPSpork(("0.0.0.0", 30783))
 
         server.prefork = 2
         server.pids = None
