@@ -36,11 +36,19 @@ class _Gulp(object):
         raise NotImplementedError()
 
 
-class TCPGulp(_Gulp, socketserver.StreamRequestHandler):
+class _StreamRequestHandler(socketserver.StreamRequestHandler, object):
+    """Converted to newstyle class."""
+
+
+class _DatagramRequestHandler(socketserver.DatagramRequestHandler, object):
+    """Converted to newstyle class."""
+
+
+class TCPGulp(_Gulp, _StreamRequestHandler):
     """Handle a single TCP request."""
 
 
-class UDPGulp(_Gulp, socketserver.DatagramRequestHandler):
+class UDPGulp(_Gulp, _DatagramRequestHandler):
     """Handle a single UDP request."""
 
 
