@@ -26,7 +26,7 @@ def _eintr_retry(func, *args):
                 raise
 
 
-class Gulp(socketserver.StreamRequestHandler):
+class _Gulp(object):
     """Handle a single request."""
 
     def handle(self):
@@ -34,6 +34,14 @@ class Gulp(socketserver.StreamRequestHandler):
         correct handler.
         """
         raise NotImplementedError()
+
+
+class TCPGulp(_Gulp, socketserver.StreamRequestHandler):
+    """Handle a single TCP request."""
+
+
+class UDPGulp(_Gulp, socketserver.DatagramRequestHandler):
+    """Handle a single UDP request."""
 
 
 class _TCPServer(socketserver.TCPServer, object):
@@ -49,7 +57,7 @@ class _SpoonMixIn(object):
     single process.
     """
     server_logger = "spoon-server"
-    handler_klass = Gulp
+    handler_klass = TCPGulp
     # Custom signal handling
     signal_reload = signal.SIGUSR1
     signal_shutdown = signal.SIGTERM
