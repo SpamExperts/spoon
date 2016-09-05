@@ -101,7 +101,7 @@ def run_daemon(server, pidfile, daemonize=True):
 def send_action(action, pidfile):
     """Send a signal to an existing running daemon."""
     if not os.path.exists(pidfile):
-        print("No pid file available: %s", pidfile, file=sys.stderr)
+        print("No pid file available:", pidfile, file=sys.stderr)
         return
     with open(pidfile) as pidf:
         pid = int(pidf.read())
