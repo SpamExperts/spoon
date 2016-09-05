@@ -148,6 +148,9 @@ class _SporkMixIn(_SpoonMixIn):
 
     def serve_forever(self, poll_interval=0.5):
         """Fork the current process and wait for all children to finish."""
+        if self.prefork is None or self.prefork <= 1:
+            return super(_SporkMixIn, self).serve_forever(
+                poll_interval=poll_interval)
         pids = []
         for dummy in range(self.prefork):
             pid = os.fork()
