@@ -19,7 +19,8 @@ else:
     _has_raven = True
 
 
-def detach(stdout="/dev/null", stderr=None, stdin="/dev/null", pidfile=None):
+def detach(stdout="/dev/null", stderr=None, stdin="/dev/null",
+           pidfile=None, logger=None):
     """This forks the current process into a daemon.
 
     The stdin, stdout, and stderr arguments are file names that
@@ -31,6 +32,9 @@ def detach(stdout="/dev/null", stderr=None, stdin="/dev/null", pidfile=None):
     Note that stderr is opened unbuffered, so if it shares a file with
     stdout then interleaved output may not appear in the order that you
     expect."""
+    if logger is None:
+        logger = logging
+
     # Do first fork.
     try:
         pid = os.fork()
@@ -38,8 +42,7 @@ def detach(stdout="/dev/null", stderr=None, stdin="/dev/null", pidfile=None):
             # Exit first parent.
             sys.exit(0)
     except OSError as err:
-        print("Fork #1 failed: (%d) %s" % (err.errno, err.strerror),
-              file=sys.stderr)
+        logger.critical("Fork #1 failed: (%d) %s", err.errno, err.strerror)
         sys.exit(1)
 
     # Decouple from parent environment.
@@ -54,8 +57,7 @@ def detach(stdout="/dev/null", stderr=None, stdin="/dev/null", pidfile=None):
             # Exit second parent.
             sys.exit(0)
     except OSError as err:
-        print("Fork #2 failed: (%d) %s" % (err.errno, err.strerror),
-              file=sys.stderr)
+        logger.critical("Fork #2 failed: (%d) %s", err.errno, err.strerror)
         sys.exit(1)
 
     # Open file descriptors and print start message.
@@ -84,8 +86,9 @@ def run_daemon(server, pidfile, daemonize=True):
       a daemon.
     :return:
     """
+    logger = logging.getLogger(server.server_logger)
     if daemonize:
-        detach(pidfile=pidfile)
+        detach(pidfile=pidfile, logger=logger)
     elif pidfile:
         with open(pidfile, "w+") as pidf:
             pidf.write("%s\n" % os.getpid())
@@ -98,10 +101,12 @@ def run_daemon(server, pidfile, daemonize=True):
             pass
 
 
-def send_action(action, pidfile):
+def send_action(action, pidfile, logger=None):
     """Send a signal to an existing running daemon."""
+    if logger is None:
+        logger = logging
     if not os.path.exists(pidfile):
-        print("No pid file available:", pidfile, file=sys.stderr)
+        logger.critical("No pid file available: %s", pidfile)
         return
     with open(pidfile) as pidf:
         pid = int(pidf.read())
@@ -151,6 +156,24 @@ def _setup_logging(logger, options, cmd_options):
         stream_handler.setLevel(logging.INFO)
 
 
+def _is_process_running(logger, options):
+    pid_file = options["pid_file"]
+    if not os.path.exists(pid_file):
+        logger.debug("No other process running.")
+        return False
+
+    with open(pid_file, "r") as pidf:
+        pid = pidf.read().strip()
+
+    if not os.path.exists("/proc/%s" % pid):
+        logger.info("Stale pid file, removing.")
+        os.remove(pid_file)
+        return False
+
+    logger.critical("Process still running, cannot start: %s", pid)
+    return True
+
+
 def _main():
     """Parse command line arguments and process
     action related to daemons.
@@ -158,7 +181,8 @@ def _main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("klass", help="The spoon class.")
-    parser.add_argument("command", choices=["start", "stop", "reload"],
+    parser.add_argument("command", choices=["start", "stop", "reload",
+                                            "restart"],
                         help="The command to be issued.")
     parser.add_argument("-s", "--spork", default=None,
                         help="Set the number of sporked workers")
@@ -194,11 +218,13 @@ def _main():
             options[key] = value
 
     _setup_logging(logger, options, cmd_options)
-    if cmd_options.command == "stop":
-        send_action("stop", options["pid_file"])
-    elif cmd_options.command == "reload":
-        send_action("reload", options["pid_file"])
-    elif cmd_options.command == "start":
+    if cmd_options.command in ("stop", "restart"):
+        send_action("stop", options["pid_file"], logger)
+    if cmd_options.command == "reload":
+        send_action("reload", options["pid_file"], logger)
+    if cmd_options.command in ("start", "restart"):
+        if _is_process_running(logger, options):
+            return
         logger.info("Starting %s (%s)", cmd_options.klass,
                     options["spork"])
         klass.prefork = options["spork"]
