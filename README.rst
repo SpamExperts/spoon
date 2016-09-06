@@ -115,7 +115,7 @@ Reloading Sporks
 
 Another useful tool for a daemon is signaling it that the configuration
 changed and it should be reloaded without the stopping and starting the
-server again. This can be achieved by addin a ``load_config`` method to
+server again. This can be achieved by adding a ``load_config`` method to
 the server class:
 
 .. code-block::
@@ -137,6 +137,45 @@ After that the server can be signaled with the ``send_action`` function:
   >>> spoon.daemon.send_action("reload", "/var/tmp/my-echo-server.pid")
   >>>
 
+
+Managing Daemons via command-line
+---------------------------------
+
+You can also manage Spork Daemons via the command line with the
+``spoon.daemon`` module. First set your default command line options
+in your Spork class. For example:
+
+.. code-block::
+
+  class MyEchoServer(spoon.server.TCPSpoon):
+      server_logger = "my-echo-server"
+      handler_klass = RequestHandler
+      command_line_defaults = {
+        "port": 30111,
+        "interface": "::0",
+        "pid_file": "/var/tmp/my-echo-server.pid",
+        "log_file": "/var/log/my-echo-server.log",
+        "sentry_dsn": None,
+        "spork": 12,
+      }
+
+Then call the ``spoon.daemon`` via the command line to start/stop/reload
+your Spork. Some examples:
+
+.. code-block::
+
+  $ python -m spoon.daemon echo.server.MyEchoServerForked start
+  $ python -m spoon.daemon echo.server.MyEchoServerForked stop
+  $ python -m spoon.daemon echo.server.MyEchoServerForked restart
+  $ python -m spoon.daemon echo.server.MyEchoServerForked reload
+
+This will automatically take care of:
+
+ * Setting up the Spork to fork
+ * Configuring the interface and port
+ * Setting the pid file
+ * Setting up logging
+ * Starting and detaching the Spork server
 
 License
 -------
