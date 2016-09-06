@@ -72,6 +72,15 @@ class _SpoonMixIn(object):
     # Socket options.
     ipv6_only = False
     allow_reuse_address = True
+    # Command line defaults
+    command_line_defaults = {
+        "port": 5000,
+        "interface": "::0",
+        "pid_file": None,
+        "log_file": None,
+        "sentry_dsn": None,
+        "spork": None,
+    }
 
     def __init__(self, address):
         self.log = logging.getLogger(self.server_logger)

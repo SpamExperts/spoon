@@ -112,12 +112,12 @@ def send_action(action, pidfile):
         os.kill(pid, signal.SIGTERM)
 
 
-def _setup_logging(logger, options):
+def _setup_logging(logger, options, cmd_options):
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     logger.setLevel(logging.DEBUG)
 
-    if options.log_file:
-        filename = options.log_file
+    if options["log_file"]:
+        filename = options["log_file"]
         file_handler = logging.FileHandler(filename)
         file_handler.setFormatter(formatter)
         file_handler.setLevel(logging.INFO)
@@ -128,8 +128,8 @@ def _setup_logging(logger, options):
     stream_handler.setFormatter(formatter)
     logger.addHandler(stream_handler)
 
-    if options.sentry_dsn and _has_raven:
-        client = raven.Client(options.sentry_dsn,
+    if options["sentry_dsn"] and _has_raven:
+        client = raven.Client(options["sentry_dsn"],
                               enable_breadcrumbs=False,
                               transport=raven.transport.HTTPTransport)
 
@@ -145,9 +145,9 @@ def _setup_logging(logger, options):
         for null_logger in null_loggers:
             null_logger.handlers = [logging.NullHandler()]
 
-    if options.debug:
+    if cmd_options.debug:
         stream_handler.setLevel(logging.DEBUG)
-    elif options.info:
+    elif cmd_options.info:
         stream_handler.setLevel(logging.INFO)
 
 
@@ -162,11 +162,11 @@ def _main():
                         help="The command to be issued.")
     parser.add_argument("-s", "--spork", default=None,
                         help="Set the number of sporked workers")
-    parser.add_argument("-p", "--pid-file", default=None, required=True,
+    parser.add_argument("-p", "--pid-file", default=None,
                         help="Set the PID file for the daemon.")
-    parser.add_argument("-P", "--port", default=5000, type=int,
+    parser.add_argument("-P", "--port", default=None, type=int,
                         help="Port to listen on")
-    parser.add_argument("-I", "--interface", default="::0",
+    parser.add_argument("-I", "--interface", default=None,
                         help="Interface to listen on")
     parser.add_argument("-n", "--nice", dest="nice", type=int,
                         help="'nice' level", default=10)
@@ -179,23 +179,31 @@ def _main():
     parser.add_argument("-S", "--sentry-dsn", default=None,
                         help="Set the sentry DSN for logging.")
 
-    options = parser.parse_args()
-    os.nice(options.nice)
+    cmd_options = parser.parse_args()
+    os.nice(cmd_options.nice)
 
-    module, klass = options.klass.rsplit(".", 1)
+    module, klass = cmd_options.klass.rsplit(".", 1)
     klass = getattr(importlib.import_module(module), klass)
     logger = logging.getLogger(klass.server_logger)
-    _setup_logging(logger, options)
 
-    if options.command == "stop":
-        send_action("stop", options.pid_file)
-    elif options.command == "reload":
-        send_action("reload", options.pid_file)
-    elif options.command == "start":
-        logger.info("Starting %s (%s)", options.klass, options.spork)
-        klass.prefork = options.spork
-        server = klass((options.interface, options.port))
-        run_daemon(server, options.pid_file)
+    options = dict(klass.command_line_defaults)
+    for key in options.keys():
+        # Override with cmd line options.
+        value = getattr(cmd_options, key, None)
+        if value is not None:
+            options[key] = value
+
+    _setup_logging(logger, options, cmd_options)
+    if cmd_options.command == "stop":
+        send_action("stop", options["pid_file"])
+    elif cmd_options.command == "reload":
+        send_action("reload", options["pid_file"])
+    elif cmd_options.command == "start":
+        logger.info("Starting %s (%s)", cmd_options.klass,
+                    options["spork"])
+        klass.prefork = options["spork"]
+        server = klass((options["interface"], options["port"]))
+        run_daemon(server, options["pid_file"])
 
 
 if __name__ == "__main__":
