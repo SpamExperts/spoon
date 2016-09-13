@@ -202,6 +202,8 @@ def _main():
                         help="Set the log file.")
     parser.add_argument("-S", "--sentry-dsn", default=None,
                         help="Set the sentry DSN for logging.")
+    parser.add_argument("-D", "--no-daemon", default=False,
+                        action="store_true", help="Don't daemonize process")
 
     cmd_options = parser.parse_args()
     os.nice(cmd_options.nice)
@@ -227,9 +229,10 @@ def _main():
             return
         logger.info("Starting %s (%s)", cmd_options.klass,
                     options["spork"])
-        klass.prefork = options["spork"]
+        klass.prefork = int(options["spork"])
         server = klass((options["interface"], options["port"]))
-        run_daemon(server, options["pid_file"])
+        run_daemon(server, options["pid_file"],
+                   not cmd_options.no_daemon)
 
 
 if __name__ == "__main__":
