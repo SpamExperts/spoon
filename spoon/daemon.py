@@ -8,6 +8,7 @@ import signal
 import logging
 import argparse
 import importlib
+import logging.handlers
 
 try:
     import raven
@@ -123,7 +124,7 @@ def _setup_logging(logger, options, cmd_options):
 
     if options["log_file"]:
         filename = options["log_file"]
-        file_handler = logging.FileHandler(filename)
+        file_handler = logging.handlers.WatchedFileHandler(filename)
         file_handler.setFormatter(formatter)
         file_handler.setLevel(logging.INFO)
         logger.addHandler(file_handler)
