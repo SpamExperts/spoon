@@ -119,7 +119,8 @@ def send_action(action, pidfile, logger=None):
 
 
 def _setup_logging(logger, options, cmd_options):
-    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+    formatter = logging.Formatter('%(asctime)s %(process)s %(levelname)s '
+                                  '%(message)s')
     logger.setLevel(logging.DEBUG)
 
     if options["log_file"]:

@@ -93,6 +93,17 @@ class _SpoonMixIn(object):
 
         super(_SpoonMixIn, self).__init__(address, self.handler_klass,
                                           bind_and_activate=False)
+        self.load_config()
+        self._setup_socket()
+
+        # Finally, set signals
+        if self.signal_reload is not None:
+            signal.signal(self.signal_reload, self.reload_handler)
+        if self.signal_shutdown is not None:
+            signal.signal(self.signal_shutdown, self.shutdown_handler)
+
+    def _setup_socket(self):
+        self.socket = socket.socket(self.address_family, self.socket_type)
         if self.allow_reuse_address:
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         if not self.ipv6_only:
@@ -101,15 +112,11 @@ class _SpoonMixIn(object):
                                        socket.IPV6_V6ONLY, 0)
             except (AttributeError, socket.error) as e:
                 self.log.debug("Unable to set IPV6_V6ONLY to false %s", e)
-        self.load_config()
         self.server_bind()
         self.server_activate()
 
-        # Finally, set signals
-        if self.signal_reload is not None:
-            signal.signal(self.signal_reload, self.reload_handler)
-        if self.signal_shutdown is not None:
-            signal.signal(self.signal_shutdown, self.shutdown_handler)
+    def serve_forever(self, poll_interval=0.1):
+        super(_SpoonMixIn, self).serve_forever(poll_interval=poll_interval)
 
     def load_config(self):
         """Reads the configuration files, this is called when
@@ -155,7 +162,7 @@ class _SporkMixIn(_SpoonMixIn):
         self.pids = None
         _SpoonMixIn.__init__(self, address)
 
-    def serve_forever(self, poll_interval=0.5):
+    def serve_forever(self, poll_interval=0.1):
         """Fork the current process and wait for all children to finish."""
         if self.prefork is None or self.prefork <= 1:
             return super(_SporkMixIn, self).serve_forever(
