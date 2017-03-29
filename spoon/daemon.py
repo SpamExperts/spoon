@@ -118,7 +118,7 @@ def send_action(action, pidfile, logger=None):
         os.kill(pid, signal.SIGTERM)
 
 
-def _setup_logging(logger, options, cmd_options):
+def _setup_logging(logger, options):
     formatter = logging.Formatter('%(asctime)s %(process)s %(levelname)s '
                                   '%(message)s')
     logger.setLevel(logging.DEBUG)
@@ -127,7 +127,10 @@ def _setup_logging(logger, options, cmd_options):
         filename = options["log_file"]
         file_handler = logging.handlers.WatchedFileHandler(filename)
         file_handler.setFormatter(formatter)
-        file_handler.setLevel(logging.INFO)
+        if options["debug"]:
+            file_handler.setLevel(logging.DEBUG)
+        else:
+            file_handler.setLevel(logging.INFO)
         logger.addHandler(file_handler)
 
     stream_handler = logging.StreamHandler()
@@ -152,9 +155,9 @@ def _setup_logging(logger, options, cmd_options):
         for null_logger in null_loggers:
             null_logger.handlers = [logging.NullHandler()]
 
-    if cmd_options.debug:
+    if options["debug"]:
         stream_handler.setLevel(logging.DEBUG)
-    elif cmd_options.info:
+    elif options["info"]:
         stream_handler.setLevel(logging.INFO)
 
 
@@ -196,9 +199,9 @@ def _main():
                         help="Interface to listen on")
     parser.add_argument("-n", "--nice", dest="nice", type=int,
                         help="'nice' level", default=10)
-    parser.add_argument("-d", "--debug", action="store_true", default=False,
+    parser.add_argument("-d", "--debug", action="store_true", default=None,
                         dest="debug", help="enable debugging output")
-    parser.add_argument("-i", "--info", action="store_true", default=False,
+    parser.add_argument("-i", "--info", action="store_true", default=None,
                         dest="info", help="enable informational output")
     parser.add_argument("-L", "--log-file", default=None,
                         help="Set the log file.")
@@ -220,8 +223,11 @@ def _main():
         value = getattr(cmd_options, key, None)
         if value is not None:
             options[key] = value
+    for key, value in cmd_options.__dict__.items():
+        if key not in options:
+            options[key] = value
 
-    _setup_logging(logger, options, cmd_options)
+    _setup_logging(logger, options)
     if cmd_options.command in ("stop", "restart"):
         send_action("stop", options["pid_file"], logger)
     if cmd_options.command == "reload":
