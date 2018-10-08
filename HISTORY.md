@@ -1,3 +1,7 @@
+### 1.0.7 (2018-10-08)
+
+ - Upgrade from Raven to Sentry SDK.
+
 ### 1.0.6 (2017-03-29)
 
  - Add support for debugging. 

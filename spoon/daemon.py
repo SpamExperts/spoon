@@ -11,13 +11,12 @@ import importlib
 import logging.handlers
 
 try:
-    import raven
-    import raven.transport
-    from raven.handlers.logging import SentryHandler
+    import sentry_sdk
+    from sentry_sdk.integrations.flask import FlaskIntegration
 except ImportError:
-    _has_raven = False
+    _has_sentry = False
 else:
-    _has_raven = True
+    _has_sentry = True
 
 
 def detach(stdout="/dev/null", stderr=None, stdin="/dev/null",
@@ -138,22 +137,11 @@ def _setup_logging(logger, options):
     stream_handler.setFormatter(formatter)
     logger.addHandler(stream_handler)
 
-    if options["sentry_dsn"] and _has_raven:
-        client = raven.Client(options["sentry_dsn"],
-                              enable_breadcrumbs=False,
-                              transport=raven.transport.HTTPTransport)
-
-        # Add Sentry handle to application logger.
-        sentry_handler = SentryHandler(client)
-        sentry_handler.setLevel(logging.WARNING)
-        logger.addHandler(sentry_handler)
-
-        null_loggers = [
-            logging.getLogger("sentry.errors"),
-            logging.getLogger("sentry.errors.uncaught")
-        ]
-        for null_logger in null_loggers:
-            null_logger.handlers = [logging.NullHandler()]
+    if options["sentry_dsn"] and _has_sentry:
+        sentry_sdk.init(
+            dsn=options["sentry_dsn"],
+            integrations=[FlaskIntegration()]
+        )
 
     if options["debug"]:
         stream_handler.setLevel(logging.DEBUG)
